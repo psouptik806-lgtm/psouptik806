@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOUPTIK OSINT - Universal OSINT Reconnaissance Tool</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    background: #0a0a1a; 
+    color: #e0e0e0;
+    min-height: 100vh;
+}
+.header {
+    background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3e 50%, #0a0a1a 100%);
+    padding: 20px;
+    text-align: center;
+    border-bottom: 2px solid #ff4444;
+}
+.header h1 {
+    font-size: 36px;
+    background: linear-gradient(180deg, #ff4444, #ff6b6b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 3px;
+    font-weight: 900;
+}
+.header p { color: #888; margin-top: 5px; }
+.header .subtitle {
+    color: #ff6b6b;
+    font-size: 14px;
+    margin-top: 5px;
+    letter-spacing: 2px;
+}
+.container { max-width: 1200px; margin: auto; padding: 20px; }
+
+/* Menu */
+.menu {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+    margin: 30px 0;
+}
+.menu-item {
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    flex: 1 1 150px;
+    max-width: 180px;
+}
+.menu-item:hover {
+    border-color: #ff4444;
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(255,68,68,0.2);
+}
+.menu-item .icon { font-size: 36px; margin-bottom: 10px; }
+.menu-item .label { font-size: 13px; color: #ccc; font-weight: 600; }
+.menu-item.active {
+    border-color: #ff4444;
+    background: linear-gradient(135deg, #2a1a2e, #1a1a3e);
+}
+
+/* Panels */
+.panel {
+    display: none;
+    background: #111125;
+    border: 1px solid #222;
+    border-radius: 12px;
+    padding: 25px;
+    margin-top: 20px;
+    animation: fadeIn 0.3s;
+}
+.panel.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.panel h2 {
+    color: #ff4444;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #222;
+    font-size: 22px;
+}
+.panel h2 .icon { margin-right: 10px; }
+
+/* Form elements */
+input, select, textarea {
+    width: 100%;
+    padding: 12px 15px;
+    background: #0a0a1a;
+    border: 1px solid #333;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 15px;
+    transition: border 0.3s;
+    margin-bottom: 15px;
+}
+input:focus, select:focus { outline: none; border-color: #ff4444; }
+.input-group { margin-bottom: 15px; }
+.input-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: #888;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.btn {
+    padding: 12px 30px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 600;
+    transition: all 0.3s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.btn-primary {
+    background: linear-gradient(135deg, #ff4444, #ff6b6b);
+    color: #fff;
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(255,68,68,0.4); }
+.btn-secondary {
+    background: #222;
+    color: #ccc;
+    border: 1px solid #444;
+}
+.btn-secondary:hover { background: #333; }
+.btn-sm { padding: 8px 15px; font-size: 12px; }
+
+/* Results */
+.result-box {
+    display: none;
+    margin-top: 20px;
+    background: #0a0a1a;
+    border: 1px solid #222;
+    border-radius: 8px;
+    padding: 20px;
+}
+.result-box.active { display: block; }
+.result-box .header-result {
+    color: #ff4444;
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.result-item {
+    padding: 10px 15px;
+    margin: 5px 0;
+    background: #111125;
+    border-radius: 6px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+.result-item .r-icon { font-size: 18px; min-width: 30px; }
+.result-item .r-label { color: #888; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+.result-item .r-value { color: #fff; font-size: 15px; margin-top: 2px; word-break: break-all; }
+.result-item .r-value a { color: #ff6b6b; text-decoration: none; }
+.result-item .r-value a:hover { text-decoration: underline; }
+.result-item.success { border-left: 3px solid #44ff44; }
+.result-item.error { border-left: 3px solid #ff4444; }
+.result-item.warning { border-left: 3px solid #ffaa00; }
+.result-item.info { border-left: 3px solid #4488ff; }
+
+/* Loading */
+.loading {
+    display: none;
+    text-align: center;
+    padding: 40px;
+}
+.loading.active { display: block; }
+.spinner {
+    width: 50px; height: 50px;
+    border: 3px solid #222;
+    border-top: 3px solid #ff4444;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 15px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading p { color: #888; }
+
+/* Tags */
+.tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    margin: 2px;
+}
+.tag-green { background: rgba(68,255,68,0.15); color: #44ff44; border: 1px solid rgba(68,255,68,0.3); }
+.tag-red { background: rgba(255,68,68,0.15); color: #ff4444; border: 1px solid rgba(255,68,68,0.3); }
+.tag-yellow { background: rgba(255,170,0,0.15); color: #ffaa00; border: 1px solid rgba(255,170,0,0.3); }
+.tag-blue { background: rgba(68,136,255,0.15); color: #4488ff; border: 1px solid rgba(68,136,255,0.3); }
+
+/* Status badges */
+.badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+}
+.badge-found { background: rgba(68,255,68,0.2); color: #44ff44; }
+.badge-notfound { background: rgba(255,68,68,0.2); color: #ff4444; }
+.badge-unknown { background: rgba(255,170,0,0.2); color: #ffaa00; }
+
+/* Tabs inside panels */
+.tabs {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+.tab {
+    padding: 8px 18px;
+    background: #0a0a1a;
+    border: 1px solid #222;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #888;
+    transition: all 0.3s;
+}
+.tab:hover { border-color: #444; color: #ccc; }
+.tab.active { 
+    background: linear-gradient(135deg, #ff444422, #ff6b6b22);
+    border-color: #ff4444;
+    color: #ff4444;
+}
+
+/* Grid */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
+@media (max-width: 768px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .menu-item { flex: 1 1 100px; max-width: 140px; }
+}
+
+/* Copy button */
+.copy-btn {
+    background: none;
+    border: 1px solid #444;
+    color: #888;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+    transition: all 0.3s;
+}
+.copy-btn:hover { border-color: #ff4444; color: #ff4444; }
+
+/* Footer */
+.footer {
+    text-align: center;
+    padding: 20px;
+    color: #555;
+    font-size: 13px;
+    border-top: 1px solid #111;
+    margin-top: 40px;
+}
+
+/* Alert */
+.alert {
+    padding: 12px 15px;
+    border-radius: 6px;
+    margin: 10px 0;
+    font-size: 14px;
+}
+.alert-info { background: rgba(68,136,255,0.1); border: 1px solid rgba(68,136,255,0.3); color: #4488ff; }
+.alert-warning { background: rgba(255,170,0,0.1); border: 1px solid rgba(255,170,0,0.3); color: #ffaa00; }
+.alert-success { background: rgba(68,255,68,0.1); border: 1px solid rgba(68,255,68,0.3); color: #44ff44; }
+.alert-danger { background: rgba(255,68,68,0.1); border: 1px solid rgba(255,68,68,0.3); color: #ff4444; }
+
+/* Scroll bar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #0a0a1a; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #555; }
+
+/* Map link special */
+.map-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(68,136,255,0.1);
+    border: 1px solid rgba(68,136,255,0.3);
+    padding: 3px 12px;
+    border-radius: 20px;
+    color: #4488ff !important;
+    font-size: 13px;
+    text-decoration: none;
+}
+.map-link:hover { background: rgba(68,136,255,0.2); }
+
+/* Progress */
+.progress-bar {
+    height: 3px;
+    background: #222;
+    border-radius: 2px;
+    margin: 10px 0;
+    overflow: hidden;
+}
+.progress-bar .fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ff4444, #ff6b6b);
+    width: 0%;
+    transition: width 0.3s;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+    <h1>🔍 SOUPTIK OSINT</h1>
+    <p>UNIVERSAL OSINT RECONNAISSANCE PLATFORM</p>
+    <div class="subtitle">📱 Mobile · 📸 Instagram · 📘 Facebook · 📧 Gmail · 🔍 Cross-Platform</div>
+</div>
+
+<div class="container">
+
+<div class="menu" id="mainMenu">
+    <div class="menu-item" onclick="showPanel('mobile')">
+        <div class="icon">📱</div>
+        <div class="label">MOBILE NUMBER</div>
+    </div>
+    <div class="menu-item" onclick="showPanel('instagram')">
+        <div class="icon">📸</div>
+        <div class="label">INSTAGRAM</div>
+    </div>
+    <div class="menu-item" onclick="showPanel('facebook')">
+        <div class="icon">📘</div>
+        <div class="label">FACEBOOK</div>
+    </div>
+    <div class="menu-item" onclick="showPanel('email')">
+        <div class="icon">📧</div>
+        <div class="label">GMAIL / EMAIL</div>
+    </div>
+    <div class="menu-item" onclick="showPanel('cross')">
+        <div class="icon">🌐</div>
+        <div class="label">CROSS-PLATFORM</div>
+    </div>
+    <div class="menu-item" onclick="showPanel('mynetwork')">
+        <div class="icon">🌍</div>
+        <div class="label">MY NETWORK</div>
+    </div>
+</div>
+
+<!-- MOBILE PANEL -->
+<div class="panel" id="panel-mobile">
+    <h2><span class="icon">📱</span> MOBILE NUMBER OSINT</h2>
+    <div class="input-group">
+        <label>Mobile Number</label>
+        <input type="text" id="mobileInput" placeholder="e.g., +919876543210 or 9876543210" />
+    </div>
+    <div class="tabs">
+        <div class="tab active" id="mobileTabBasic" onclick="switchMobileTab('basic')">Basic Info</div>
+        <div class="tab" id="mobileTabAdv" onclick="switchMobileTab('advanced')">Advanced OSINT</div>
+        <div class="tab" id="mobileTabAll" onclick="switchMobileTab('all')">Full Scan</div>
+    </div>
+    <button class="btn btn-primary" onclick="searchMobile()">🔍 SEARCH MOBILE</button>
+    <div class="loading" id="mobileLoading">
+        <div class="spinner"></div>
+        <p>Searching multiple sources...</p>
+        <div class="progress-bar"><div class="fill" id="mobileProgress"></div></div>
+    </div>
+    <div class="result-box" id="mobileResult"></div>
+</div>
+
+<!-- INSTAGRAM PANEL -->
+<div class="panel" id="panel-instagram">
+    <h2><span class="icon">📸</span> INSTAGRAM USERNAME OSINT</h2>
+    <div class="input-group">
+        <label>Instagram Username</label>
+        <input type="text" id="instaInput" placeholder="e.g., username (without @)" />
+    </div>
+    <button class="btn btn-primary" onclick="searchInstagram()">🔍 SEARCH INSTAGRAM</button>
+    <div class="loading" id="instaLoading">
+        <div class="spinner"></div>
+        <p>Scraping Instagram profile...</p>
+    </div>
+    <div class="result-box" id="instaResult"></div>
+</div>
+
+<!-- FACEBOOK PANEL -->
+<div class="panel" id="panel-facebook">
+    <h2><span class="icon">📘</span> FACEBOOK USERNAME OSINT</h2>
+    <div class="input-group">
+        <label>Facebook Username or Profile ID</label>
+        <input type="text" id="fbInput" placeholder="e.g., username or profile ID" />
+    </div>
+    <button class="btn btn-primary" onclick="searchFacebook()">🔍 SEARCH FACEBOOK</button>
+    <div class="loading" id="fbLoading">
+        <div class="spinner"></div>
+        <p>Searching Facebook profile...</p>
+    </div>
+    <div class="result-box" id="fbResult"></div>
+</div>
+
+<!-- GMAIL PANEL -->
+<div class="panel" id="panel-email">
+    <h2><span class="icon">📧</span> GMAIL / EMAIL OSINT</h2>
+    <div class="input-group">
+        <label>Email Address</label>
+        <input type="text" id="emailInput" placeholder="e.g., example@gmail.com" />
+    </div>
+    <div class="tabs">
+        <div class="tab active" id="emailTabGrav" onclick="switchEmailTab('gravatar')">Gravatar</div>
+        <div class="tab" id="emailTabPlat" onclick="switchEmailTab('platforms')">Platform Search</div>
+        <div class="tab" id="emailTabDork" onclick="switchEmailTab('dorks')">Google Dorks</div>
+    </div>
+    <button class="btn btn-primary" onclick="searchEmail()">🔍 SEARCH EMAIL</button>
+    <div class="loading" id="emailLoading">
+        <div class="spinner"></div>
+        <p>Searching email across platforms...</p>
+    </div>
+    <div class="result-box" id="emailResult"></div>
+</div>
+
+<!-- CROSS PLATFORM PANEL -->
+<div class="panel" id="panel-cross">
+    <h2><span class="icon">🌐</span> CROSS-PLATFORM USERNAME SEARCH</h2>
+    <div class="input-group">
+        <label>Username to Search Across All Platforms</label>
+        <input type="text" id="crossInput" placeholder="e.g., john_doe" />
+    </div>
+    <button class="btn btn-primary" onclick="searchCross()">🔍 SEARCH ALL PLATFORMS</button>
+    <div class="loading" id="crossLoading">
+        <div class="spinner"></div>
+        <p>Checking 35+ platforms...</p>
+        <div class="progress-bar"><div class="fill" id="crossProgress"></div></div>
+    </div>
+    <div class="result-box" id="crossResult"></div>
+</div>
+
+<!-- MY NETWORK PANEL -->
+<div class="panel" id="panel-mynetwork">
+    <h2><span class="icon">🌍</span> YOUR NETWORK GEOLOCATION</h2>
+    <div class="alert alert-info">Fetches your current IP address, location, ISP, and network details from ip-api.com</div>
+    <button class="btn btn-primary" onclick="getMyNetwork()">📍 GET MY NETWORK INFO</button>
+    <div class="loading" id="netLoading">
+        <div class="spinner"></div>
+        <p>Fetching your network geolocation...</p>
+    </div>
+    <div class="result-box" id="netResult"></div>
+</div>
+
+<!-- RESULTS OVERLAY FOR CROSS-PLATFORM MAP -->
+<div id="resultsMap" style="display:none;"></div>
+
+<div class="footer">
+    <p>SOUPTIK OSINT v3.0 — Authorized Security Testing Only</p>
+    <p>⚡ All data is fetched from public sources in real-time</p>
+</div>
+
+</div>
+
+<script>
+// ============================================
+// CORE UTILITIES
+// ============================================
+const CORS = 'https://api.allorigins.win/raw?url=';
+const PROXY = (url) => CORS + encodeURIComponent(url);
+
+function $(id) { return document.getElementById(id); }
+function showElement(id) { $(id).classList.add('active'); }
+function hideElement(id) { $(id).classList.remove('active'); }
+function setHTML(id, html) { $(id).innerHTML = html; }
+function addHTML(id, html) { $(id).innerHTML += html; }
+
+function showLoading(id) { showElement(id); }
+function hideLoading(id) { hideElement(id); }
+function showResult(id) { showElement(id); }
+function hideResult(id) { hideElement(id); }
+function setProgress(id, percent) { $(id).style.width = percent + '%'; }
+
+function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+function cleanNumber(num) {
+    num = num.replace(/[\s\-\(\)]/g, '');
+    if (!num.startsWith('+')) {
+        if (num.length === 10) num = '+91' + num;
+        else if (num.startsWith('91') && num.length === 12) num = '+' + num;
+        else num = '+' + num;
+    }
+    return num;
+}
+
+function formatDate() {
+    const d = new Date();
+    return d.toISOString().replace('T', ' ').split('.')[0];
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        alert('Copied to clipboard!');
+    }).catch(() => {
+        // Fallback
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+    });
+}
+
+function getMapLink(location) {
+    const enc = encodeURIComponent(location);
+    return `https://www.google.com/maps/search/${enc}`;
+}
+
+// ============================================
+// PANEL SWITCHING
+// ============================================
+function showPanel(name) {
+    // Hide all panels
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+    
+    // Show selected panel
+    const panel = $('panel-' + name);
+    if (panel) panel.classList.add('active');
+    
+    // Highlight menu item
+    const items = document.querySelectorAll('.menu-item');
+    const labels = ['mobile','instagram','facebook','email','cross','mynetwork'];
+    const idx = labels.indexOf(name);
+    if (idx >= 0 && items[idx]) items[idx].classList.add('active');
+}
+
+// ============================================
+// MODULE 1: MOBILE NUMBER OSINT
+// ============================================
+let mobileTab = 'basic';
+function switchMobileTab(tab) {
+    mobileTab = tab;
+    ['mobileTabBasic','mobileTabAdv','mobileTabAll'].forEach(id => $(id).classList.remove('active'));
+    $('mobileTab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+}
+
+async function searchMobile() {
+    let num = $('mobileInput').value.trim();
+    if (!num) { alert('Please enter a mobile number'); return; }
+    
+    hideResult('mobileResult');
+    showLoading('mobileLoading');
+    setProgress('mobileProgress', 0);
+    
+    const clean = cleanNumber(num);
+    const national = clean.replace('+91','').replace('+','');
+    
+    let html = `<div class="header-result">📱 Mobile OSINT Results</div>
+                <div class="result-item"><span class="r-icon">📞</span><div><div class="r-label">Target Number</div><div class="r-value">${clean}</div></div></div>`;
+    
+    // Basic phone number analysis (client-side with libphonenumber.js)
+    try {
+        await sleep(200);
+        setProgress('mobileProgress', 15);
+        
+        // Load libphonenumber if available
+        let valid = false, carrier = 'Unknown', location = 'Unknown', timezone = 'Unknown';
+        
+        // Use simple regex-based detection as fallback
+        if (national.length === 10 && /^\d+$/.test(national)) {
+            valid = true;
+            
+            // Indian carrier detection
+            const carrierMap = {
+                '98':'Reliance Jio','99':'Reliance Jio','90':'Reliance Jio',
+                '91':'Airtel','92':'Airtel','93':'Airtel','94':'Airtel','95':'Airtel',
+                '96':'Vodafone Idea (Vi)','97':'Vodafone Idea (Vi)',
+                '70':'BSNL','71':'BSNL','72':'BSNL','73':'BSNL','74':'BSNL',
+                '80':'MTNL','81':'MTNL'
+            };
+            
+            for (const [prefix, c] of Object.entries(carrierMap)) {
+                if (national.startsWith(prefix)) {
+                    carrier = c;
+                    break;
+                }
+            }
+            
+            // Try numverify API
+            try {
+                const resp = await fetch(PROXY(`https://numverify.com/php/resp.php?number=${national}&country_code=IN`));
+                if (resp.ok) {
+                    const text = await resp.text();
+                    try {
+                        const data = JSON.parse(text);
+                        if (data.carrier) carrier = data.carrier;
+                        if (data.location) location = data.location;
+                        if (data.line_type) {
+                            html += `<div class="result-item info"><span class="r-icon">📞</span><div><div class="r-label">Line Type</div><div class="r-value">${data.line_type}</div></div></div>`;
+                        }
+                    } catch(e) {}
+                }
+            } catch(e) {}
+            
+            html += `<div class="result-item success"><span class="r-icon">✅</span><div><div class="r-label">Validity</div><div class="r-value"><span class="badge badge-found">VALID</span> Indian Mobile Number</div></div></div>`;
+        } else {
+            html += `<div class="result-item error"><span class="r-icon">❌</span><div><div class="r-label">Validity</div><div class="r-value"><span class="badge badge-notfound">INVALID</span> Not a valid 10-digit number</div></div></div>`;
+        }
+        
+        setProgress('mobileProgress', 30);
+        html += `<div class="result-item"><span class="r-icon">🏢</span><div><div class="r-label">Carrier/Operator</div><div class="r-value">${carrier}</div></div></div>`;
+        html += `<div class="result-item"><span class="r-icon">📍</span><div><div class="r-label">Region</div><div class="r-value">${location}</div></div></div>`;
+        html += `<div class="result-item"><span class="r-icon">🌍</span><div><div class="r-label">Country</div><div class="r-value">India (+91)</div></div></div>`;
+        
+        // Advanced OSINT links
+        if (mobileTab === 'advanced' || mobileTab === 'all') {
+            setProgress('mobileProgress', 50);
+            html += `<div class="result-item warning" style="margin-top:15px;"><span class="r-icon">🔗</span><div><div class="r-label">OSINT LINKS</div></div></div>`;
+            
+            const links = [
+                { icon: '📞', label: 'Truecaller', url: `https://www.truecaller.com/search/in/${national}` },
+                { icon: '🔍', label: 'Google Search', url: `https://www.google.com/search?q=${clean}` },
+                { icon: '💬', label: 'WhatsApp', url: `https://wa.me/${national}` },
+                { icon: '✈️', label: 'Telegram', url: `https://t.me/+91${national}` },
+                { icon: '💳', label: 'UPI (Paytm)', url: `https://paytm.com/upi/${national}@paytm` },
+                { icon: '🕵️', label: 'HIBP Breach', url: `https://haveibeenpwned.com/phone/${national}` },
+                { icon: '📘', label: 'Facebook Search', url: `https://www.facebook.com/search/top?q=${clean}` },
+                { icon: '🔵', label: 'Spam Check', url: `https://www.truecaller.com/search/in/${national}` },
+            ];
+            
+            for (const link of links) {
+                html += `<div class="result-item">
+                    <span class="r-icon">${link.icon}</span>
+                    <div>
+                        <div class="r-label">${link.label}</div>
+                        <div class="r-value"><a href="${link.url}" target="_blank">${link.url}</a> <button class="copy-btn" onclick="copyToClipboard('${link.url}')">📋</button></div>
+                    </div>
+                </div>`;
+            }
+        }
+        
+        // Truecaller API attempt
+        if (mobileTab === 'all') {
+            setProgress('mobileProgress', 70);
+            html += `<div class="result-item info" style="margin-top:15px;"><span class="r-icon">⏳</span><div><div class="r-label">Extended OSINT</div><div class="r-value">Attempting Truecaller API search...</div></div></div>`;
+            
+            try {
+                const insId = "a1k07--Vgdfyvv_rftf5uuudhuhnkljyvvtfftjuhbuijbhug";
+                const tcResp = await fetch(`https://search5-noneu.truecaller.com/v2/search?q=${clean}&countryCode=IN&type=4&encoding=json`, {
+                    headers: {
+                        'User-Agent': 'Truecaller/13.8.2 (Android;12)',
+                        'installation-id': insId,
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (tcResp.ok) {
+                    const tcData = await tcResp.json();
+                    if (tcData.data && tcData.data.length > 0) {
+                        const entry = tcData.data[0];
+                        html += `<div class="result-item success"><span class="r-icon">✅</span><div><div class="r-label">Truecaller API</div><div class="r-value">Data retrieved successfully</div></div></div>`;
+                        
+                        if (entry.name) html += `<div class="result-item"><span class="r-icon">👤</span><div><div class="r-label">Name</div><div class="r-value">${entry.name}</div></div></div>`;
+                        if (entry.alternateName) html += `<div class="result-item"><span class="r-icon">🔄</span><div><div class="r-label">Alternate Name</div><div class="r-value">${entry.alternateName}</div></div></div>`;
+                        if (entry.email) html += `<div class="result-item"><span class="r-icon">📧</span><div><div class="r-label">Email</div><div class="r-value">${entry.email}</div></div></div>`;
+                        if (entry.carrier) html += `<div class="result-item"><span class="r-icon">📡</span><div><div class="r-label">Carrier</div><div class="r-value">${entry.carrier}</div></div></div>`;
+                        
+                        if (entry.addresses && entry.addresses.length > 0) {
+                            html += `<div class="result-item"><span class="r-icon">📍</span><div><div class="r-label">Address</div>`;
+                            entry.addresses.forEach(addr => {
+                                if (addr.fullAddress) {
+                                    html += `<div class="r-value"><a href="${getMapLink(addr.fullAddress)}" target="_blank" class="map-link">🗺️ ${addr.fullAddress}</a></div>`;
+                                }
+                            });
+                            html += `</div></div>`;
+                        }
+                        
+                        if (entry.socialProfiles && entry.socialProfiles.length > 0) {
+                            html += `<div class="result-item"><span class="r-icon">🔗</span><div><div class="r-label">Social Profiles</div>`;
+                            entry.socialProfiles.forEach(sp => {
+                                if (sp.url) {
+                                    html += `<div class="r-value"><a href="${sp.url}" target="_blank">${sp.name || sp.url}</a></div>`;
+                                }
+                            });
+                            html += `</div></div>`;
+                        }
+                    } else {
+                        html += `<div class="result-item warning"><span class="r-icon">⚠️</span><div><div class="r-label">Truecaller</div><div class="r-value">No data found via API</div></div></div>`;
+                    }
+                }
+            } catch(e) {
+                html += `<div class="result-item warning"><span class="r-icon">⚠️</span><div><div class="r-label">Truecaller API</div><div class="r-value">Limited by CORS — use browser proxy extension</div></div></div>`;
+            }
+        }
+        
+        setProgress('mobileProgress', 100);
+        await sleep(300);
+        
+    } catch(e) {
+        html += `<div class="result-item error"><span class="r-icon">❌</span><div><div class="r-label">Error</div><div class="r-value">${e.message}</div></div></div>`;
+    }
+    
+    setHTML('mobileResult', html);
+    hideLoading('mobileLoading');
+    showResult('mobileResult');
+}
+
+// ============================================
+// MODULE 2: INSTAGRAM OSINT
+// ============================================
+async function searchInstagram() {
+    let username = $('instaInput').value.trim().replace('@', '');
+    if (!username) { alert('Please enter an Instagram username'); return; }
+    
+    hideResult('instaResult');
+    showLoading('instaLoading');
+    
+    let html = `<div class="header-result">📸 Instagram OSINT Results</div>
+                <div class="result-item"><span class="r-icon">👤</span><div><div class="r-label">Username</div><div class="r-value">@${username}</div></div></div>`;
+    
+    try {
+        // Try to fetch Instagram profile page
+        const url = `https://www.instagram.com/${username}/`;
+        const resp = await fetch(PROXY(url));
+        
+        if (resp.ok) {
+            const text = await resp.text();
+            html += `<div class="result-item success"><span class="r-icon">✅</span><div><div class="r-label">Status</div><div class="r-value"><span class="badge badge-found">PROFILE FOUND</span></div></div></div>`;
+            
+            // Extract name
+            const nameMatch = text.match(/<meta[^>]*property="og:title"[^>]*content="([^"]+)"/);
+            if (nameMatch) {
+                const fullName = nameMatch[1].replace(` (@${username})`, '');
+                html += `<div class="result-item"><span class="r-icon">👤</span><div><div class="r-label">Name</div><div class="r-value">${fullName}</div></div></div>`;
+            }
+            
+            // Extract bio
+            const bioMatch = text.match(/<meta[^>]*property="og:description"[^>]*content="([^"]+)"/);
+            if (bioMatch) {
+                html += `<div class="result-item"><span class="r-icon">📝</span><div><div class="r-label">Bio</div><div class="r-value">${bioMatch[1].substring(0, 300)}</div></div></div>`;
+            }
+            
+            // Extract profile pic
+            const imgMatch = text.match(/<meta[^>]*property="og:image"[^>]*content="([^"]+)"/);
+            if (imgMatch) {
+                html += `<div class="result-item"><span class="r-icon">🖼️</span><div><div class="r-label">Profile Picture</div><div class="r-value"><img src="${imgMatch[1]}" style="width:100px;height:100px;border-radius:50%;border:2px solid #ff4444;" /></div></div></div>`;
+            }
+            
+            // Extract follower/following counts
+            const followersMatch = text.match(/"edge_followed_by":\{"count":(\d+)\}/);
+            if (followersMatch) {
+                html += `<div class="result-item"><span class="r-icon">👥</span><div><div class="r-label">Followers</div><div class="r-value">${parseInt(followersMatch[1]).toLocaleString()}</div></div></div>`;
+            }
+            
+            const followingMatch = text.match(/"edge_follow":\{"count":(\d+)\}/);
+            if (followingMatch) {
+                html += `<div class="result-item"><span class="r-icon">➡️</span><div><div class="r-label">Following</div><div class="r-value">${parseInt(followingMatch[1]).toLocaleString()}</div></div></div>`;
+            }
+            
+            const postsMatch = text.match(/"edge_owner_to_timeline_media":\{"count":(\d+)\}/);
+            if (postsMatch) {
+                html += `<div class="result-item"><span class="r-icon">📷</span><div><div class="r-label">Posts</div><div class="r-value">${parseInt(postsMatch[1]).toLocaleString()}</div></div></div>`;
+            }
+            
+            const privateMatch = text.match(/"is_private":(true|false)/);
+            if (privateMatch) {
+                const isPrivate = privateMatch[1] === 'true';
+                html += `<div class="result-item ${isPrivate ? 'warning' : 'success'}"><span class="r-icon">🔒</span><div><div class="r-label">Private Account</div><div class="r-value">${isPrivate ? 'Yes — Limited info available' : 'No — Public profile'}</div></div></div>`;
+            }
+        } else {
+            html += `<div class="result-item error"><span class="r-icon">❌</span><div><div class="r-label">Status</div><div class="r-value"><span class="badge badge-notfound">NOT FOUND</span> Profile doesn't exist or is restricted</div></div></div>`;
+        }
+        
+        // Always show the profile link
+        html += `<div class="result-item info" style="margin-top:10px;"><span class="r-icon">🔗</span><div><div class="r-label">Profile URL</div><div class="r-value"><a href="https://www.instagram.com/${username}/" target="_blank">https://www.instagram.com/${username}/</a></div></div></div>`;
+        
+    } catch(e) {
+        html += `<div class="result-item error"><span class="r-icon">❌</span><div><div class="r-label">Error</div><div class="r-value">${e.message}. Try using a CORS proxy extension.</div></div></div>`;
+        html += `<div class="result-item info"><span class="r-icon">🔗</span><div><div class="r-label">Direct Link</div><div class="r-value"><a href="https://www.instagram.com/${username}/" target="_blank">https://www.instagram.com/${username}/</a></div></div></div>`;
+    }
+    
+    setHTML('instaResult', html);
+    hideLoading('instaLoading');
+    showResult('instaResult');
+}
+
+// ============================================
+// MODULE 3: FACEBOOK OSINT
+// ============================================
+async function searchFacebook() {
+    let username = $('fbInput').value.trim().replace('@', '');
+    if (!username) { alert('Please enter a Facebook username'); return; }
+    
+    hideResult('fbResult');
+    showLoading('fbLoading');
+    
+    let html = `<div class="header-result">📘 Facebook OSINT Results</div>
+                <div class="result-item"><span class="r-icon">👤</span><div><div class="r-label">Username</div><div class="r-value">${username}</div></div></div>`;
+    
+    try {
+        // Try Facebook page/profile
+        const url = `https://www.facebook.com/${username}`;
+        const resp = await fetch(PROXY(url));
+        
+        if (resp.ok) {
+            const text = await resp.text();
+            
+            // Check if profile exists
+            if (text.includes('PageNotAvailable') || text.includes('content_does_not_exist')) {
+                html += `<div class="result-item error"><span class="r-icon">❌</span><div><div class="r-label">Status</div><div class="r-value"><span class="badge badge-notfound">NOT FOUND</span></div></div></div>`;
+            } else {
+                html += `<div class="result-item success"><span class="r-icon">✅</span><div><div class="r-label">Status</div><div class="r-value"><span class="badge badge-found">PROFILE FOUND</span></div></div></div>`;
+                
+                // Extract name
+                const nameMatch = text.match(/<title>(.*?)<\/title>/);
+                if (nameMatch) {
+                    const name = nameMatch[1].replace(' | Facebook', '').replace(' - Facebook', '').trim();
+                    html += `<div class="result-item"><span class="r-icon">👤</span><div><div class="r-label">Name</div><div class="r-value">${name}</div></div></div>`;
+                }
+                
+                // Extract description
+                const descMatch = text.match(/<meta[^>]*property="og:description"[^>]*content="([^"]+)"/);
+                if (descMatch) {
+                    html += `<div class="result-item"><span class="r-icon">📝</span><div><div class="r-label">About</div><div class="r-value">${descMatch[1].substring(0, 300)}</div></div></div>`;
+                }
+                
+                // Extract profile pic
+                const imgMatch = text.match(/<meta[^>]*property="og:image"[^>]*content="([^"]+)"/);
+                if (imgMatch) {
+                    html += `<div class="result-item"><span class="r-icon">🖼️</span><div><div class="r-label">Profile Picture</div><div class="r-value"><img src="${imgMatch[1]}" style="width:100px;height:100px;border-radius:8px;border:2px solid #ff4444;" /></div></div></div>`;
+                }
+                
+                // Try Graph API
+                try {
+                    const graphResp = await fetch(`https://graph.facebook.com/${username}`);
+                    if (graphResp.ok) {
+                        const gData = await graphResp.json();
+                        if (gData.id) {
+                            html += `<div class="result-item"><span class="r-icon">🆔</span><div><div class="r-label">User ID</div><div class="r-value">${gData.id}</div></div></div>`;
+                        }
+                    }
+                } catch(e) {}
+            }
+        } else {
+            html += `<div class="result-item error"><span class="r-icon">❌</span><div><div class="r-label">Status</div><div class="r-value"><span class="badge badge-notfound">NOT FOUND</span></div></div></div>`;
+        }
+        
+        // Quick links
+        html += `<div class="result-item info" style="margin-top:10px;"><span class="r-icon">🔗</span><div><div class="r-label">Quick Links</div></div></div>`;
+        html += `<div class="result-item"><span class="r-icon">📱</span><div><div class="r-value"><a href="https://mbasic.facebook.com/${username}" target="_blank">Mobile Version (mbasic)</a></div></div></div>`;
+        html += `<div class="result-item"><span class="r-icon">🔍</span><div><div class="r-value"><a href="https://www.facebook.com/search/top?q=${username}" target="_blank">Facebook Search</a></div></div></div>`;
+        
+    } catch(e) {
+        html += `<div class="result-item error"><span class="r-icon">❌</span><div><div class="r-label">Error</div><div class="r-value">${e.message}</div></div></div>`;
+        html += `<div class="result-item info"><span class="r-icon">🔗</span><div><div class="r-label">Direct Link</div><div class="r-value"><a href="https://www.facebook.com/${username}" target="_blank">https://www.facebook.com/${username}</a></div></div></div>`;
+    }
+    
+    setHTML('fbResult', html);
+    hideLoading('fbLoading');
+    showResult('fbResult');
+}
+
+// ============================================
+// MODULE 4: EMAIL/GMAIL OSINT
